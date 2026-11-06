@@ -1,0 +1,30 @@
+# Manifiesto del conector de E1-PB-LECA-AMB01. Ver CONTRIBUTING.md, "Tu conector".
+nombre  = "E1-PB-LECA-AMB01"            # igual a la carpeta
+version = "0.1.0"
+sdk     = ">=1,<2"
+autores = ["LosLocoCorchos"]             # usuarios de GitHub del grupo
+clase   = "conector:ConectorAmbiente"
+
+# Un bloque por cada campo que manda el firmware en "values". Lo que no esté acá, o esté fuera
+# de rango, no se guarda. Los rangos son los del sensor, no los de la alarma.
+[campos.co2_ppm]          # SCD40
+unidad = "ppm"
+min = 0
+max = 40000
+
+[campos.temp_c]           # SCD40
+unidad = "°C"
+min = -10
+max = 60
+
+[campos.hum_pct]          # SCD40
+unidad = "% HR"
+min = 0
+max = 100
+
+# Tensión en el AO del MQ2, ya compensada por el divisor 10k/15k. NO es ppm. El firmware solo
+# publica con el pin del ADC por debajo de 3100 mV, o sea, hasta ~5167 mV en el AO.
+[campos.gas_mv]           # MQ2
+unidad = "mV"
+min = 0
+max = 5200
