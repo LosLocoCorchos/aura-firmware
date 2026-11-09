@@ -1,0 +1,20 @@
+# ESP32-C3 SuperMini (4 MB) - Hoja
+CONFIG_IDF_TARGET="esp32c3"
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+# Tabla propia: dos lugares OTA + partición "cola" (respaldo de mediciones sin confirmar tras un corte)
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+# Una versión nueva que no logra hablar con la raíz vuelve sola a la anterior
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+# Imágenes firmadas: la placa solo instala por OTA una imagen firmada con la clave de la cátedra
+# (RSA-3072, esquema de Secure Boot V2, sin quemar eFuses). La compilación NO firma: se firma
+# aparte, en la máquina que tiene la clave privada, antes de grabar o de mandar por OTA
+# (GUIA_NODOS_HOJA.md, "Imágenes firmadas"). La clave nunca se sube al repo.
+CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y
+CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME=y
+CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT=y
+# CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES is not set
+
+# Consola por el USB del chip (la SuperMini no tiene conversor USB-serie). Así la UART0
+# no usa los pines 20 y 21, que son del RS-485 del medidor.
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y

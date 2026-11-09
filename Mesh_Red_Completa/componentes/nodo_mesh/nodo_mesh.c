@@ -620,6 +620,16 @@ static void procesar_comando(const recibida_t *r, const aura_trama_t *t)
     bool local = cJSON_IsString(o) && strcmp(o->valuestring, "local") == 0;
     char motivo[48] = "";
 
+    if (params != NULL && !cJSON_IsObject(params)) {
+        /* params es un objeto o no viene: con un arreglo, los hijos no tienen nombre
+           (string NULL) y el strcmp de aplicar_config o ejecutar_comando hace caer la placa. */
+        if (!local) {
+            resultado(command_id, false, "json_invalido");
+        }
+        cJSON_Delete(d);
+        return;
+    }
+
     if (strcmp(comando, "set_config") == 0) {
         const cJSON *a = cJSON_GetObjectItemCaseSensitive(params, "aula");
         bool solo_aula = a != NULL && cJSON_GetArraySize(params) == 1;

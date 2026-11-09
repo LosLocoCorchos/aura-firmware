@@ -1,0 +1,118 @@
+# Manifiesto del conector del medidor de energía (PM2130) del tablero del LabECA.
+# Ver CONTRIBUTING.md, "Tu conector".
+nombre  = "E1-PB-LECA-TAB01"
+version = "0.2.2"
+sdk     = ">=1.2,<2"
+autores = ["francobroggi", "tomasvidela11", "santicianflone"]
+clase   = "conector:ConectorTableroAula"
+
+# Un bloque por cada campo que manda el firmware en "values", con la unidad en el nombre y su
+# rango físico. Lo que no esté acá, o esté fuera de rango, AURA no lo guarda.
+# Los rangos tienen que coincidir con los límites del firmware y con la ficha del dispositivo.
+#
+# Los campos se muestran en este orden. rol: principal (tarjeta del Dashboard y gráfico),
+# auxiliar (en la ficha, aparte) u oculto.
+
+# ---- Principales: lo que alguien mira para saber cómo está el tablero ----
+[campos.p_w]
+unidad   = "W"
+min      = -30000         # negativa: energía hacia la red (en un aula, señal de TI invertido)
+max      = 30000
+etiqueta = "Potencia activa"
+rol      = "principal"
+
+[campos.v_an_v]
+unidad   = "V"
+min      = 0
+max      = 300
+etiqueta = "Tensión"
+rol      = "principal"
+
+[campos.i_a_a]
+unidad   = "A"
+min      = 0
+max      = 120            # TI de 100/5 A, con margen de sobrecarga
+etiqueta = "Corriente"
+rol      = "principal"
+
+# ---- Auxiliares: calidad de la energía y valores que salen de otros ----
+[campos.cosphi_a]
+unidad   = "adimensional"
+min      = 0
+max      = 1
+etiqueta = "cos φ (factor de desplazamiento)"
+rol      = "auxiliar"
+
+# Opcionales: el firmware los manda solo si están habilitados.
+[campos.e_act_kwh]
+unidad   = "kWh"
+min      = 0
+max      = 1000000000
+etiqueta = "Energía activa acumulada"
+rol      = "auxiliar"
+
+[campos.tanphi]
+unidad   = "adimensional"   # Q/P total: positivo inductivo, negativo capacitivo
+min      = -10
+max      = 10
+etiqueta = "tan φ (reactiva sobre activa)"
+rol      = "auxiliar"
+
+[campos.thd_v_an_pct]
+unidad   = "%"
+min      = 0
+max      = 100
+etiqueta = "Distorsión armónica de tensión"
+rol      = "auxiliar"
+
+[campos.thd_i_a_pct]
+unidad   = "%"
+min      = 0
+max      = 500            # con cargas electrónicas puede superar el 100 %
+etiqueta = "Distorsión armónica de corriente"
+rol      = "auxiliar"
+
+# ---- Fases B y C ----
+# El aula es monofásica: el firmware las tiene, pero no las envía (ENVIAR_FASES_BC = 0).
+# Si algún día se habilitan, descomentar estos bloques en el mismo PR.
+# [campos.v_bn_v]
+# unidad   = "V"
+# min      = 0
+# max      = 300
+# etiqueta = "Tensión fase B"
+# rol      = "auxiliar"
+#
+# [campos.v_cn_v]
+# unidad   = "V"
+# min      = 0
+# max      = 300
+# etiqueta = "Tensión fase C"
+# rol      = "auxiliar"
+#
+# [campos.i_b_a]
+# unidad   = "A"
+# min      = 0
+# max      = 120
+# etiqueta = "Corriente fase B"
+# rol      = "auxiliar"
+#
+# [campos.i_c_a]
+# unidad   = "A"
+# min      = 0
+# max      = 120
+# etiqueta = "Corriente fase C"
+# rol      = "auxiliar"
+#
+# [campos.cosphi_b]
+# unidad   = "adimensional"
+# min      = 0
+# max      = 1
+# etiqueta = "Factor de potencia fase B"
+# rol      = "auxiliar"
+#
+# [campos.cosphi_c]
+# unidad   = "adimensional"
+# min      = 0
+# max      = 1
+# etiqueta = "Factor de potencia fase C"
+# rol      = "auxiliar"

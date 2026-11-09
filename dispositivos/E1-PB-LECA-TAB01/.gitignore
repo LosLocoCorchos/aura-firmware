@@ -1,0 +1,8 @@
+# Lo que genera VS Code con la extensión ESP-IDF (rutas locales de cada máquina)
+.vscode/
+.clangd
+
+# Lo que genera make -C tests
+tests/test_pm2130
+tests/test_pm2130_todo
+tests/*.exe
