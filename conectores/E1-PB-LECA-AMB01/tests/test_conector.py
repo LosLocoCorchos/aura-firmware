@@ -64,7 +64,7 @@ class ConectorAmbiente(unittest.TestCase):
         self.assertEqual(self.ctx.alertas, [])
 
     def test_no_alerta_por_umbral(self):
-        # Las alertas de CO2 y gas las emite el firmware (alerts/dioxido_carbono_alto, alerts/gas_alto)
+        # Las alertas de CO2 y de humo/vapores las emite el firmware (alerts/dioxido_carbono_alto, alerts/humo_vapores)
         # cuando su alarma cambia. Si el conector también alertara, AURA las vería duplicadas.
         for i, (co2, gas) in enumerate([(600, 900), (2200, 3000), (700, 1000)]):
             self.procesar(completo(i, co2=co2, gas=gas))

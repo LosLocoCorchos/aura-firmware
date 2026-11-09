@@ -6,7 +6,7 @@
  *   Rojo fijo                     sin conexión desde hace más de LED_REINTENTO_MS
  *   Azul "respirando"             conectado a la mesh y calentando sensores (sin conexión se sigue viendo el
  *                                 intento: amarillo parpadeando o rojo)
- *   Magenta parpadeo rápido       alarma de gas o CO2 (tiene prioridad sobre todo lo demás)
+ *   Magenta parpadeo rápido       aviso de CO2 o de humo/vapores activo o silenciado (prioridad sobre todo)
  *   Cian, dos destellos cortos    un sensor falla: se intercala con el color de la conexión
  *
  * Prioridad: alarma > calentando (solo si hay conexión) > falla de sensor > estado de la conexión.

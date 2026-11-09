@@ -16,7 +16,7 @@ int main(void)
     /* Una lectura mala suelta NO es una falla y se sigue usando el último valor bueno */
     VERIFICAR(!sonda_registrar(&s, false, 0, 6000));
     VERIFICAR(!s.en_falla);
-    VERIFICAR(sonda_vigente(&s, 6000, &v) && v == 612.0);          /* observación 6 */
+    VERIFICAR(sonda_vigente(&s, 6000, &v) && v == 612.0);          /* se sigue usando el último valor bueno */
     VERIFICAR(!sonda_registrar(&s, false, 0, 11000));
     VERIFICAR(!s.en_falla && sonda_vigente(&s, 11000, &v) && v == 612.0);
 
@@ -26,7 +26,7 @@ int main(void)
     VERIFICAR(!sonda_registrar(&s, false, 0, 26000));
     VERIFICAR(!s.en_falla && sonda_vigente(&s, 26000, &v) && v == 640.0);
 
-    /* A la 3.ª mala seguida se declara la falla, UNA vez, y ya no hay dato (observación 5) */
+    /* A la 3.ª mala seguida se declara la falla, UNA vez, y ya no hay dato (una sola alerta, no una por lectura) */
     VERIFICAR(sonda_registrar(&s, false, 0, 31000));
     VERIFICAR(s.en_falla && !sonda_vigente(&s, 31000, &v));
     VERIFICAR(!sonda_registrar(&s, false, 0, 36000));               /* sin cambio: no se vuelve a avisar */

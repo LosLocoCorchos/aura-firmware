@@ -25,27 +25,33 @@
  * la alarma y cian (dos destellos) si falla un sensor.
  *
  * Calentamiento: los dos sensores arrancan juntos y comparten un solo reloj de CALENTAMIENTO_S
- * (2 min). Mientras dura no se publica nada, no se informa el estado de las sondas y la alarma y
- * el buzzer están inhibidos. Tras cualquier reinicio (por ejemplo un corte de luz) vuelve a
- * empezar completo.
+ * (2 min). Mientras dura no se publica nada, no se informa el estado de las sondas y el aviso de
+ * humo/vapores (MQ2) está inhibido. El aviso de CO2 NO espera: el SCD40 da lecturas a los pocos
+ * segundos y el filtro de 1 minuto de alarma.h cubre las primeras. Tras cualquier reinicio (por
+ * ejemplo un corte de luz) todo vuelve a empezar: las causas arrancan en normal y, si siguen
+ * altas, el aviso se prende al minuto.
  *
  * Dos ritmos distintos, una vez terminado el calentamiento:
- *   - cada SENSOR_PERIODO_MS (5 s) se mide, se evalúa la alarma local y se lleva la cuenta de las
+ *   - cada SENSOR_PERIODO_MS (5 s) se mide, se evalúa el aviso local y se lleva la cuenta de las
  *     sondas (sonda.h).
  *   - cada intervalo_s (set_config, 5..86400 s) se publica la última medición válida y vigente de
- *     cada sonda. Si cambia una alarma se publica enseguida, sin esperar el intervalo.
+ *     cada sonda. Si cambia el estado de una causa se publica enseguida, sin esperar el intervalo.
  *
- * Alarma (alarma.h): gas y CO2 son causas separadas, cada una con su silencio. Cuando una causa se
- * activa o se normaliza se avisa a AURA con una alerta (dioxido_carbono_alto / gas_alto), así AURA
- * se entera aunque el intervalo sea largo y los umbrales viven en un solo lugar (alarma.h).
+ * Aviso de ventilación (alarma.h): CO2 y humo/vapores son causas independientes con tres estados
+ * (normal / activa / silenciada). Lo decide el nodo: suena igual sin mesh y sin AURA. El buzzer da
+ * un pitido corto cada tanto (no sirena) y una tarea propia lo maneja. Cada cambio de estado de una
+ * causa se avisa a AURA con una alerta (dioxido_carbono_alto / humo_vapores, details: estado, valor,
+ * umbral, saturado); la cola de nodo_mesh la guarda si la mesh está caída.
  *
  * Sondas (sonda.h): una falla se declara tras 3 lecturas malas seguidas y se recupera tras 2
  * buenas, y recién ahí se avisa a AURA (una alerta por cambio real). Si el SCD40 lleva 3 ciclos sin
- * dar lectura, se lo reinicia, y se reintenta cada 6 ciclos hasta que responda.
+ * dar lectura, se lo reinicia, y se reintenta cada 6 ciclos hasta que responda. Un MQ2 saturado
+ * (el ADC llegó a su techo) NO es una falla de la sonda: es una lectura válida y alta, de "al menos"
+ * MQ2_AO_SATURADO_MV.
  *
  * Parámetro: intervalo_s. Comando propio: {"command":"silence"} calla el buzzer por las causas
- * activas hasta que se normalicen; sin alarma activa se rechaza ("sin_alarma"). El aula la asigna
- * AURA con set_config {"aula": ...}: no está acá.
+ * activas, hasta que se normalicen o pasen ALARMA_SILENCIO_MAX_MS (30 min); sin causa activa se
+ * rechaza ("sin_alarma"). El aula la asigna AURA con set_config {"aula": ...}: no está acá.
  *
  * Todas las placas de este dispositivo llevan el MISMO binario: no hay MAC, id ni aula en el
  * código. MESH_ID y MESH_AP_PASS van en config_local.h (igual que en el gateway y el concentrador).
@@ -97,6 +103,7 @@
    (cian). 0 = solo el estado de la conexión (verde / amarillo parpadeando / rojo). */
 #define LED_ESTADOS_EXTRA    1
 #define LED_PERIODO_MS       50
+#define BUZZER_PERIODO_MS    50
 
 static const char *TAG = "AMB01";
 
@@ -114,8 +121,9 @@ static int64_t t_calentamiento_ms;        /* instante (desde el arranque del chi
 
 /* Estado de cada sonda: falla declarada y última medición válida (solo la usa la tarea de sensores) */
 static sonda_t s_co2, s_temp, s_hum, s_gas;
-static bool gas_saturado = false;         /* el ADC llegó a su techo en el último ciclo */
-static bool publicar_ya = false;          /* cambió una alarma: publicar sin esperar el intervalo */
+static bool publicar_ya = false;          /* cambió el estado de una causa: publicar sin esperar el intervalo */
+static causa_estado_t avisado_humo = CAUSA_NORMAL;      /* último estado informado a AURA de cada causa */
+static causa_estado_t avisado_co2 = CAUSA_NORMAL;
 
 static uint32_t lecturas_ok = 0, lecturas_fallidas = 0;
 
@@ -170,18 +178,23 @@ static void buzzer(bool suena)
     gpio_set_level(PIN_BUZZER, suena ? 1 : 0);
 }
 
+static int64_t ahora_ms(void)
+{
+    return esp_timer_get_time() / 1000;
+}
+
 static bool ejecutar_comando(const char *comando, const cJSON *params, bool local, char *motivo, size_t tam)
 {
     (void)params;
     if (strcmp(comando, "silence") == 0) {
         xSemaphoreTake(mtx_alarma, portMAX_DELAY);
-        bool habia_alarma = alarma_silenciar(&alarma);
+        bool habia_alarma = alarma_silenciar(&alarma, (uint64_t)ahora_ms());
         if (habia_alarma) {
             buzzer(false);
         }
         xSemaphoreGive(mtx_alarma);
         if (!habia_alarma) {
-            /* Sin alarma activa no hay nada que callar. Aceptarlo "para después" dejaría mudo el
+            /* Sin causa activa no hay nada que callar. Aceptarlo "para después" dejaría mudo el
                buzzer en la próxima alarma (p. ej. un silence durante el calentamiento). */
             snprintf(motivo, tam, "sin_alarma");
             ESP_LOGW(TAG, "silence rechazado (orden %s): no hay alarma activa", local ? "local" : "de AURA");
@@ -210,25 +223,13 @@ static void escanear_i2c(i2c_master_bus_handle_t bus)
     }
 }
 
-static int64_t ahora_ms(void)
+/* Informa cuánto falta de calentamiento. Durante el calentamiento el MQ2 no se evalúa y no se publica,
+   pero el SCD40 sí se lee: el aviso de CO2 no espera. */
+static void informar_calentamiento(void)
 {
-    return esp_timer_get_time() / 1000;
-}
-
-/* Durante el calentamiento no se lee, no se publica y la alarma está inhibida. Devuelve true si el
-   calentamiento sigue. */
-static bool ciclo_calentamiento(void)
-{
-    uint64_t desde = (uint64_t)t_calentamiento_ms, ahora = (uint64_t)ahora_ms();
-    if (!calentamiento_activo(desde, ahora, CALENTAMIENTO_S)) {
-        return false;
-    }
-    uint32_t restante = calentamiento_restante_s(desde, ahora, CALENTAMIENTO_S);
-    xSemaphoreTake(mtx_alarma, portMAX_DELAY);
-    buzzer(false);                                  /* el buzzer queda callado y la alarma sin evaluar */
-    xSemaphoreGive(mtx_alarma);
-    ESP_LOGI(TAG, "calentando sensores: faltan %lu s (sin publicar, alarma inhibida)", (unsigned long)restante);
-    return true;
+    uint32_t restante = calentamiento_restante_s((uint64_t)t_calentamiento_ms, (uint64_t)ahora_ms(), CALENTAMIENTO_S);
+    ESP_LOGI(TAG, "calentando el MQ2: faltan %lu s (sin publicar, aviso de humo inhibido; el de CO2 ya funciona)",
+             (unsigned long)restante);
 }
 
 /* Cuenta una lectura de una sonda. El aviso a AURA sale solo cuando cambia el estado declarado
@@ -241,31 +242,33 @@ static void registrar_sonda(sonda_t *s, const char *campo, bool ok, double valor
     nodo_mesh_sonda(campo, !s->en_falla, motivo);
 }
 
-/* Alerta a AURA cuando una causa de la alarma se activa o se normaliza (contrato 3.5). */
-static void alertar_causa(const char *tipo, const char *severidad, bool activa, bool con_dato, const char *nombre,
-                          const char *unidad, uint32_t valor, uint32_t umbral)
+/* Alerta a AURA por un cambio de estado de una causa (contrato 3.5). */
+static void alertar_causa(const char *tipo, const char *nombre, const char *unidad, causa_estado_t estado,
+                          const causa_t *c, uint32_t umbral)
 {
-    char msg[80];
+    const char *nombre_estado = estado == CAUSA_ACTIVA ? "activa" : (estado == CAUSA_SILENCIADA ? "silenciada" : "normalizada");
+    char msg[96];
+    if (estado == CAUSA_ACTIVA) {
+        snprintf(msg, sizeof(msg), "%s: %s%lu %s (umbral %lu %s)", nombre, c->saturado ? "al menos " : "",
+                 (unsigned long)c->valor, unidad, (unsigned long)umbral, unidad);
+    } else if (estado == CAUSA_SILENCIADA) {
+        snprintf(msg, sizeof(msg), "%s: aviso silenciado", nombre);
+    } else {
+        snprintf(msg, sizeof(msg), "%s: se normalizó (%lu %s)", nombre, (unsigned long)c->valor, unidad);
+    }
     cJSON *d = cJSON_CreateObject();
     if (d != NULL) {
-        cJSON_AddNumberToObject(d, "valor", valor);
+        cJSON_AddStringToObject(d, "estado", nombre_estado);
+        cJSON_AddNumberToObject(d, "valor", c->valor);
         cJSON_AddNumberToObject(d, "umbral", umbral);
+        cJSON_AddBoolToObject(d, "saturado", c->saturado);
     }
-    if (activa) {
-        snprintf(msg, sizeof(msg), "%s: %lu %s (umbral %lu %s)", nombre, (unsigned long)valor, unidad,
-                 (unsigned long)umbral, unidad);
-    } else if (con_dato) {
-        snprintf(msg, sizeof(msg), "%s volvió a la normalidad (%lu %s)", nombre, (unsigned long)valor, unidad);
-    } else {
-        /* La causa se apagó porque la sonda dejó de dar dato, no porque se normalizó: no se afirma lo segundo */
-        snprintf(msg, sizeof(msg), "%s: alarma terminada, la sonda no da dato", nombre);
-    }
-    nodo_mesh_alerta(tipo, activa ? severidad : "info", msg, d);
+    nodo_mesh_alerta(tipo, estado == CAUSA_ACTIVA ? "warning" : "info", msg, d);
     cJSON_Delete(d);
 }
 
 /* ---------- Un ciclo de medición local (cada SENSOR_PERIODO_MS) ---------- */
-static void ciclo_medicion(void)
+static void ciclo_medicion(bool calentando)
 {
     uint16_t co2 = 0;
     double temp = 0, hum = 0;
@@ -295,18 +298,26 @@ static void ciclo_medicion(void)
         scd4x_ciclos_sin_lectura++;
     }
 
+    /* El MQ2 recién se lee y se evalúa terminado el calentamiento (el calefactor tarda en estabilizar) */
     uint32_t gas_mv = 0;
-    mq2_estado_t gas_est = mq2_leer(&gas_mv);
-    bool gas_ok = (gas_est == MQ2_LECTURA_OK);
-    gas_saturado = (gas_est == MQ2_SATURADA);
+    mq2_estado_t gas_est = MQ2_SIN_RESPUESTA;
+    bool gas_valido = false, gas_saturado = false;
+    if (!calentando) {
+        gas_est = mq2_leer(&gas_mv);
+        gas_saturado = (gas_est == MQ2_SATURADA);
+        if (gas_saturado) {
+            gas_mv = MQ2_AO_SATURADO_MV;      /* el valor real es AL MENOS este */
+        }
+        gas_valido = (gas_est == MQ2_LECTURA_OK) || gas_saturado;   /* saturado es una lectura válida y alta */
 
-    /* Estado de las sondas hacia AURA, con histéresis. Solo se llega acá con el calentamiento
-       terminado, así que una falla informada es una falla real. */
-    registrar_sonda(&s_co2, "co2_ppm", co2_ok, co2, t, "sin_respuesta");
-    registrar_sonda(&s_temp, "temp_c", co2_ok, temp, t, "sin_respuesta");
-    registrar_sonda(&s_hum, "hum_pct", co2_ok, hum, t, "sin_respuesta");
-    registrar_sonda(&s_gas, "gas_mv", gas_ok, gas_mv, t, gas_est == MQ2_SIN_RESPUESTA ? "sin_respuesta" : "fuera_de_rango");
-    sensor_con_falla = s_co2.en_falla || s_gas.en_falla;
+        /* Estado de las sondas hacia AURA, con histéresis. Solo con el calentamiento terminado, así
+           que una falla informada es una falla real. */
+        registrar_sonda(&s_co2, "co2_ppm", co2_ok, co2, t, "sin_respuesta");
+        registrar_sonda(&s_temp, "temp_c", co2_ok, temp, t, "sin_respuesta");
+        registrar_sonda(&s_hum, "hum_pct", co2_ok, hum, t, "sin_respuesta");
+        registrar_sonda(&s_gas, "gas_mv", gas_valido, gas_mv, t, gas_est == MQ2_SIN_RESPUESTA ? "sin_respuesta" : "fuera_de_rango");
+        sensor_con_falla = s_co2.en_falla || s_gas.en_falla;
+    }
 
     /* SCD40 mudo varios ciclos seguidos (cable flojo, brownout, quedó trabado): se lo reinicia.
        Vale también si no respondió en el arranque: se reintenta cada tanto hasta que conteste. */
@@ -315,43 +326,32 @@ static void ciclo_medicion(void)
         scd4x_ok = (scd4x_iniciar(bus_i2c) == ESP_OK);
     }
 
-    /* Alarma local (no depende de la mesh). Usa la última medición VÁLIDA y vigente de cada sonda:
-       una lectura mala suelta no apaga la alarma ni la rearma. Un MQ2 saturado cuenta como gas
-       alto: el ADC llegó a su techo y el gas es al menos MQ2_AO_SATURADO_MV. */
-    double v;
-    bool co2_v = sonda_vigente(&s_co2, t, &v);
-    uint16_t co2_a = co2_v ? (uint16_t)v : 0;
-    bool gas_v = sonda_vigente(&s_gas, t, &v);
-    uint32_t gas_a = gas_v ? (uint32_t)v : 0;
-    if (gas_saturado) {
-        gas_v = true;
-        gas_a = MQ2_AO_SATURADO_MV;
-    }
-
+    /* Aviso de ventilación (no depende de la mesh). Solo una lectura válida de ESTE ciclo cambia el
+       estado de la causa: una lectura mala suelta no apaga ni prende nada. */
     xSemaphoreTake(mtx_alarma, portMAX_DELAY);
-    bool gas_antes = alarma.gas_activa, co2_antes = alarma.co2_activa;
-    bool suena = alarma_actualizar(&alarma, gas_v, gas_a, co2_v, co2_a);
-    buzzer(suena);
-    bool en_alarma = alarma.activa;
-    bool gas_ahora = alarma.gas_activa, co2_ahora = alarma.co2_activa;
+    alarma_actualizar(&alarma, t, gas_valido, gas_mv, gas_saturado, co2_ok, co2);
+    causa_t humo = alarma.humo, co2c = alarma.co2;
     xSemaphoreGive(mtx_alarma);
 
-    /* Cada vez que una causa se activa o se normaliza se avisa a AURA y se publica ya: el aviso no
-       depende del intervalo_s (que puede ser de horas) ni de que la mesh esté arriba en ese instante
-       (la cola de nodo_mesh lo guarda). */
-    if (co2_ahora != co2_antes) {
-        alertar_causa("dioxido_carbono_alto", "warning", co2_ahora, co2_v, "CO2", "ppm", co2_a, co2_ahora ? CO2_ALARMA_PPM : CO2_NORMAL_PPM);
+    /* Cada cambio de estado de una causa (incluido un silence, que llega de otra tarea, o el
+       vencimiento del silencio) se avisa a AURA y se publica ya, sin esperar el intervalo_s ni
+       que la mesh esté arriba en ese instante (la cola de nodo_mesh lo guarda). */
+    if (co2c.estado != avisado_co2) {
+        avisado_co2 = co2c.estado;
+        alertar_causa("dioxido_carbono_alto", "CO2", "ppm", co2c.estado, &co2c, CO2_ALARMA_PPM);
         publicar_ya = true;
     }
-    if (gas_ahora != gas_antes) {
-        alertar_causa("gas_alto", "high", gas_ahora, gas_v, gas_saturado ? "Gas (MQ2, saturado)" : "Gas (MQ2)", "mV", gas_a,
-                      gas_ahora ? GAS_ALARMA_MV : GAS_NORMAL_MV);
+    if (humo.estado != avisado_humo) {
+        avisado_humo = humo.estado;
+        alertar_causa("humo_vapores", "Humo/vapores (MQ2)", "mV", humo.estado, &humo, HUMO_ALARMA_MV);
         publicar_ya = true;
     }
 
-    ESP_LOGI(TAG, "CO2 %s%u ppm | T %.1f C | HR %.1f %% | gas %s%lu mV | alarma %s%s", co2_ok ? "" : "(sin dato) ", co2,
-             temp, hum, gas_ok ? "" : (gas_saturado ? "(saturado) " : "(inválido) "), (unsigned long)gas_mv,
-             en_alarma ? "ACTIVA" : "ok", (en_alarma && !suena) ? " (buzzer silenciado)" : "");
+    static const char *const nombre_estado[] = {"normal", "ACTIVA", "silenciada"};
+    ESP_LOGI(TAG, "CO2 %s%u ppm | T %.1f C | HR %.1f %% | MQ2 %s%lu mV | aviso: CO2 %s, humo %s",
+             co2_ok ? "" : "(sin dato) ", co2, temp, hum,
+             calentando ? "(calentando) " : (gas_saturado ? "(saturado, al menos) " : (gas_valido ? "" : "(inválido) ")),
+             (unsigned long)gas_mv, nombre_estado[co2c.estado], nombre_estado[humo.estado]);
     ESP_LOGI(TAG, "SCD40: %lu lecturas ok, %lu fallidas | mesh: %lu pendientes de confirmar, aula '%s'",
              (unsigned long)lecturas_ok, (unsigned long)lecturas_fallidas, (unsigned long)nodo_mesh_pendientes(),
              nodo_mesh_aula());
@@ -411,18 +411,33 @@ static void tarea_led(void *arg)
     }
 }
 
+/* Buzzer: un pitido corto cada tanto mientras una causa esté activa (alarma_buzzer). Tarea propia
+   porque el pitido dura décimas de segundo y el ciclo de medición es de 5 s. */
+static void tarea_buzzer(void *arg)
+{
+    while (true) {
+        xSemaphoreTake(mtx_alarma, portMAX_DELAY);
+        buzzer(alarma_buzzer(&alarma, (uint64_t)ahora_ms()));
+        xSemaphoreGive(mtx_alarma);
+        vTaskDelay(pdMS_TO_TICKS(BUZZER_PERIODO_MS));
+    }
+}
+
 static void tarea_sensores(void *arg)
 {
     TickType_t base = xTaskGetTickCount();
     int64_t t_publicacion_ms = 0;
     bool ya_publico = false;
     while (true) {
-        if (!ciclo_calentamiento()) {
-            ciclo_medicion();
-
+        bool calentando = calentamiento_activo((uint64_t)t_calentamiento_ms, (uint64_t)ahora_ms(), CALENTAMIENTO_S);
+        if (calentando) {
+            informar_calentamiento();
+        }
+        ciclo_medicion(calentando);
+        if (!calentando) {
             /* Terminado el calentamiento se publica enseguida y después cada intervalo_s, siempre
-               que haya alguna medición válida (contrato 3.1). Una sola publicación lleva los
-               valores de los dos sensores juntos. */
+               que haya alguna medición vigente (contrato 3.1), o ya si cambió el estado de una causa.
+               Una sola publicación lleva los valores de los dos sensores juntos. */
             int64_t ahora = ahora_ms();
             if (publicar_ya || !ya_publico || ahora - t_publicacion_ms >= (int64_t)intervalo_s * 1000) {
                 if (publicar((uint64_t)ahora)) {      /* si no había nada que enviar, se reintenta en el ciclo siguiente */
@@ -449,6 +464,7 @@ void app_main(void)
     gpio_reset_pin(PIN_BUZZER);
     gpio_set_direction(PIN_BUZZER, GPIO_MODE_OUTPUT);
     buzzer(false);
+    xTaskCreate(tarea_buzzer, "buzzer", 2048, NULL, 3, NULL);
 
     nvs_handle_t h;
     if (nvs_open("gasco2", NVS_READONLY, &h) == ESP_OK) {
@@ -488,7 +504,7 @@ void app_main(void)
     /* Un solo reloj para los dos sensores: arranca ahora que el MQ2 y el SCD40 ya están iniciados */
     t_calentamiento_ms = ahora_ms();
     calentamiento_en_marcha = true;
-    ESP_LOGI(TAG, "calentando los sensores %u s: no se publica ni suena la alarma hasta terminar", CALENTAMIENTO_S);
+    ESP_LOGI(TAG, "calentando el MQ2 %u s: no se publica ni se evalúa el humo hasta terminar (el aviso de CO2 ya funciona)", CALENTAMIENTO_S);
 
     nodo_mesh_config_t cfg = {
         .mesh_id = {MESH_ID_BYTES},

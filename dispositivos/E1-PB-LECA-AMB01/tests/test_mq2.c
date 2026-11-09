@@ -15,7 +15,7 @@ int main(void)
     VERIFICAR(mq2_pin_a_ao_mv(2, &ao) == MQ2_LECTURA_OK && ao == 3);          /* 3,33 -> 3 */
     VERIFICAR(mq2_pin_a_ao_mv(4, &ao) == MQ2_LECTURA_OK && ao == 7);          /* 6,67 -> 7 */
 
-    /* Observación 7: el ADC de la C3 a 12 dB satura cerca de 2500 mV, no de 3100 mV */
+    /* El ADC de la C3 a 12 dB satura cerca de 2500 mV (no de 3100 mV, que es el de la ESP32) */
     VERIFICAR(MQ2_PIN_MAX_MV <= 2500u);
     VERIFICAR(mq2_pin_a_ao_mv(MQ2_PIN_MAX_MV - 1, &ao) == MQ2_LECTURA_OK && ao == 4082);
     ao = 77;

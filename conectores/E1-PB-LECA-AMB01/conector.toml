@@ -24,7 +24,8 @@ max = 100
 
 # Tensión en el AO del MQ2, ya compensada por el divisor 10k/15k. NO es ppm. El ADC de la ESP32-C3
 # a 12 dB satura cerca de 2500 mV en el pin: el firmware solo publica con el pin por debajo de
-# 2450 mV, o sea, hasta ~4082 mV en el AO. Con el ADC saturado no publica gas_mv (avisa la sonda).
+# 2450 mV, o sea, hasta ~4082 mV en el AO. Con el ADC saturado publica 4083: es una lectura válida
+# de "al menos" ese valor (el firmware lo avisa en las alertas con saturado = true).
 [campos.gas_mv]           # MQ2
 unidad = "mV"
 min = 0
