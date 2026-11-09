@@ -3,3 +3,4 @@ test_mq2
 test_alarma
 test_led_patron
 test_calentamiento
+test_sonda

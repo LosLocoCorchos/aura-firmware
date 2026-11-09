@@ -5,7 +5,8 @@
 #include "driver/i2c_master.h"
 
 /* Arranque limpio (wake_up, stop, reinit, número de serie) y start_periodic_measurement.
-   ESP_OK = quedó midiendo. */
+   ESP_OK = quedó midiendo. Se puede llamar de nuevo para reiniciar el sensor tras una falla:
+   el dispositivo se agrega al bus una sola vez. */
 esp_err_t scd4x_iniciar(i2c_master_bus_handle_t bus);
 
 /*

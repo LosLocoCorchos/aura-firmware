@@ -1,8 +1,8 @@
 # Tests de host de E1-PB-LECA-AMB01: la lógica que no toca hardware (protocolo del SCD40,
-# conversión del MQ2, alarma, calentamiento y colores del LED). El CI corre `make` en esta carpeta.
+# conversión del MQ2, alarma, sondas, calentamiento y colores del LED). El CI corre `make` en esta carpeta.
 CFLAGS = -std=c11 -Wall -Wextra -Werror -g -I../main
 
-TESTS = test_sensirion test_mq2 test_alarma test_calentamiento test_led_patron
+TESTS = test_sensirion test_mq2 test_alarma test_calentamiento test_led_patron test_sonda
 
 .PHONY: test clean
 test: $(TESTS)
@@ -24,6 +24,9 @@ test_calentamiento: test_calentamiento.c ../main/calentamiento.c ../main/calenta
 
 test_led_patron: test_led_patron.c ../main/led_patron.c ../main/led_patron.h aserciones.h
 	$(CC) $(CFLAGS) -o $@ test_led_patron.c ../main/led_patron.c
+
+test_sonda: test_sonda.c ../main/sonda.c ../main/sonda.h aserciones.h
+	$(CC) $(CFLAGS) -o $@ test_sonda.c ../main/sonda.c
 
 clean:
 	rm -f $(TESTS)

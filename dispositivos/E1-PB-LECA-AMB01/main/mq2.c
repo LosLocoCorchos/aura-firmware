@@ -9,7 +9,8 @@
 
 #define MQ2_GPIO        3
 #define MUESTRAS        10
-#define ATENUACION      ADC_ATTEN_DB_12      /* ~0 a 3,1 V en el pin */
+#define ATENUACION      ADC_ATTEN_DB_12      /* ESP32-C3: rango útil ~0 a 2,5 V en el pin (ver mq2_calc.h) */
+#define CRUDO_SATURADO  4090                 /* 12 bits: pegado al techo del ADC, con o sin calibración */
 
 static const char *TAG = "MQ2";
 static adc_oneshot_unit_handle_t adc;
@@ -49,32 +50,35 @@ esp_err_t mq2_iniciar(void)
     return ESP_OK;
 }
 
-static bool leer_pin_mv(uint32_t *mv)
+static bool leer_pin_mv(uint32_t *mv, int *crudo_out)
 {
     int crudo;
-    if (adc_oneshot_read(adc, canal, &crudo) != ESP_OK) {
+    if (adc == NULL || adc_oneshot_read(adc, canal, &crudo) != ESP_OK) {
         return false;
     }
+    *crudo_out = crudo;
     int v;
     if (cali != NULL) {
         if (adc_cali_raw_to_voltage(cali, crudo, &v) != ESP_OK) {
             return false;
         }
     } else {
-        v = crudo * (int)MQ2_PIN_MAX_MV / 4095;       /* aproximación lineal a 12 dB */
+        v = crudo * (int)MQ2_FONDO_ESCALA_MV / 4095;  /* aproximación lineal, escala de la C3 a 12 dB */
     }
     *mv = v < 0 ? 0 : (uint32_t)v;
     return true;
 }
 
-bool mq2_leer(uint32_t *ao_mv)
+mq2_estado_t mq2_leer(uint32_t *ao_mv)
 {
-    uint32_t suma = 0, minimo = UINT32_MAX, maximo = 0;
+    uint32_t suma = 0, minimo = UINT32_MAX, maximo = 0, suma_crudo = 0;
     int validas = 0;
     for (int i = 0; i < MUESTRAS; i++) {
         uint32_t mv;
-        if (leer_pin_mv(&mv)) {
+        int crudo;
+        if (leer_pin_mv(&mv, &crudo)) {
             suma += mv;
+            suma_crudo += (uint32_t)crudo;
             validas++;
             if (mv < minimo) {
                 minimo = mv;
@@ -87,15 +91,21 @@ bool mq2_leer(uint32_t *ao_mv)
     }
     if (validas == 0) {
         ESP_LOGW(TAG, "el ADC no devolvió ninguna lectura");
-        return false;
+        return MQ2_SIN_RESPUESTA;
     }
     uint32_t pin_mv = suma / (uint32_t)validas;
-    ESP_LOGD(TAG, "pin: min=%lu max=%lu prom=%lu mV (ruido %lu)", (unsigned long)minimo, (unsigned long)maximo,
-             (unsigned long)pin_mv, (unsigned long)(maximo - minimo));
-    if (!mq2_pin_a_ao_mv(pin_mv, ao_mv)) {
-        ESP_LOGW(TAG, "lectura pegada al piso o al techo del ADC (%lu mV en el pin): revisar divisor y cableado del AO",
-                 (unsigned long)pin_mv);
-        return false;
+    uint32_t crudo_prom = suma_crudo / (uint32_t)validas;
+    ESP_LOGD(TAG, "pin: min=%lu max=%lu prom=%lu mV (ruido %lu), crudo %lu", (unsigned long)minimo,
+             (unsigned long)maximo, (unsigned long)pin_mv, (unsigned long)(maximo - minimo), (unsigned long)crudo_prom);
+    if (crudo_prom >= CRUDO_SATURADO) {
+        pin_mv = MQ2_PIN_MAX_MV;                       /* el ADC está en el techo, diga lo que diga la calibración */
     }
-    return true;
+    mq2_estado_t e = mq2_pin_a_ao_mv(pin_mv, ao_mv);
+    if (e == MQ2_SATURADA) {
+        ESP_LOGW(TAG, "ADC saturado (%lu mV en el pin): el gas es al menos %u mV en el AO", (unsigned long)pin_mv,
+                 (unsigned)MQ2_AO_SATURADO_MV);
+    } else if (e == MQ2_PEGADA_AL_PISO) {
+        ESP_LOGW(TAG, "lectura en 0 mV: revisar divisor, cableado del AO y alimentación del MQ2");
+    }
+    return e;
 }

@@ -63,39 +63,26 @@ class ConectorAmbiente(unittest.TestCase):
         self.assertEqual((r.resultado, r.motivo), ("descartado", "sin_campos_validos"))
         self.assertEqual(self.ctx.alertas, [])
 
-    def test_un_valor_fuera_de_rango_no_dispara_alerta(self):
-        # 60000 ppm supera el rango del SCD40: no es una medición, no es una alarma.
+    def test_no_alerta_por_umbral(self):
+        # Las alertas de CO2 y gas las emite el firmware (alerts/dioxido_carbono_alto, alerts/gas_alto)
+        # cuando su alarma cambia. Si el conector también alertara, AURA las vería duplicadas.
+        for i, (co2, gas) in enumerate([(600, 900), (2200, 3000), (700, 1000)]):
+            self.procesar(completo(i, co2=co2, gas=gas))
+        self.assertEqual(self.ctx.alertas, [])
+        self.assertEqual(self.ctx.serie("co2_ppm"), [(T0, 600), (T0 + timedelta(minutes=1), 2200), (T0 + timedelta(minutes=2), 700)])
+
+    def test_un_valor_fuera_de_rango_no_se_guarda_ni_alerta(self):
+        # 60000 ppm supera el rango del SCD40: no es una medición.
         self.procesar(msg(0, co2_ppm=60000, temp_c=22.0))
+        self.assertEqual(self.ctx.serie("co2_ppm"), [])
         self.assertEqual(self.ctx.alertas, [])
 
-    def test_co2_alerta_una_vez_por_cruce(self):
-        for i, co2 in enumerate([600, 1400, 1500, 1800, 2200, 900, 800]):
-            self.procesar(completo(i, co2=co2))
-        self.assertEqual(alertas(self.ctx), [("dioxido_carbono_alto", "warning"), ("dioxido_carbono_alto", "info")])
-
-    def test_gas_alerta_una_vez_por_cruce(self):
-        for i, gas in enumerate([900, 2399, 2400, 3000, 1200]):
-            self.procesar(completo(i, gas=gas))
-        self.assertEqual(alertas(self.ctx), [("gas_alto", "high"), ("gas_alto", "info")])
-
-    def test_el_umbral_es_inclusivo_como_en_el_firmware(self):
-        self.procesar(completo(0, co2=1500))
-        self.assertEqual(alertas(self.ctx), [("dioxido_carbono_alto", "warning")])
-
-    def test_primera_muestra_ya_alta_alerta(self):
-        self.procesar(completo(0, gas=3500))
-        self.assertEqual(alertas(self.ctx), [("gas_alto", "high")])
-
-    def test_co2_y_gas_son_independientes(self):
-        self.procesar(completo(0, co2=1600, gas=900))
-        self.procesar(completo(1, co2=1600, gas=2600))
-        self.assertEqual(alertas(self.ctx), [("dioxido_carbono_alto", "warning"), ("gas_alto", "high")])
-
-    def test_sin_el_campo_no_se_alerta_ni_se_da_por_recuperado(self):
-        self.procesar(completo(0, gas=3000))
-        self.procesar(msg(1, co2_ppm=600, temp_c=22.5, hum_pct=45.0))   # el MQ2 falló
-        self.procesar(completo(2, gas=3100))                            # sigue alto
-        self.assertEqual(alertas(self.ctx), [("gas_alto", "high")])
+    def test_gas_por_encima_de_lo_que_publica_el_firmware_se_quita(self):
+        # El ADC de la C3 satura a ~4083 mV de AO: arriba de eso el firmware no publica gas_mv.
+        self.procesar(msg(0, co2_ppm=600, gas_mv=4500))
+        self.assertEqual(self.ctx.serie("gas_mv"), [])
+        self.procesar(msg(1, co2_ppm=600, gas_mv=4082))
+        self.assertEqual(self.ctx.serie("gas_mv"), [(T0 + timedelta(minutes=1), 4082)])
 
 
 if __name__ == "__main__":

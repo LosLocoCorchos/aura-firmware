@@ -17,7 +17,7 @@
 #define CMD_NUMERO_SERIE      0x3682
 
 static const char *TAG = "SCD40";
-static i2c_master_dev_handle_t dev;
+static i2c_master_dev_handle_t dev;       /* NULL hasta el primer scd4x_iniciar */
 
 static void esperar_ms(uint32_t ms)
 {
@@ -48,10 +48,16 @@ esp_err_t scd4x_iniciar(i2c_master_bus_handle_t bus)
         .device_address = SCD4X_DIR,
         .scl_speed_hz = SCD4X_SCL_HZ,
     };
-    esp_err_t e = i2c_master_bus_add_device(bus, &cfg, &dev);
-    if (e != ESP_OK) {
-        ESP_LOGE(TAG, "no pude agregar el SCD40 al bus: %s", esp_err_to_name(e));
-        return e;
+    esp_err_t e;
+    if (dev == NULL) {
+        /* El dispositivo se agrega al bus una sola vez: scd4x_iniciar también se llama para
+           reiniciar el sensor tras una falla, y cada alta de más gastaría un handle del bus. */
+        e = i2c_master_bus_add_device(bus, &cfg, &dev);
+        if (e != ESP_OK) {
+            dev = NULL;
+            ESP_LOGE(TAG, "no pude agregar el SCD40 al bus: %s", esp_err_to_name(e));
+            return e;
+        }
     }
 
     /* Arranque limpio, respetando el tiempo de cada comando. El wake_up solo existe en el

@@ -42,7 +42,7 @@ led_rgb_t led_calcular(const led_entrada_t *e, uint64_t ahora_ms)
         led_rgb_t m = {LED_MAGENTA_R, 0, LED_MAGENTA_B};
         return m;
     }
-    if (e->calentando) {
+    if (e->calentando && e->conectada) {        /* sin conexión se ve el intento (amarillo/rojo), no el azul */
         uint32_t t = (uint32_t)(ahora_ms % LED_RESPIRAR_MS);
         uint32_t medio = LED_RESPIRAR_MS / 2u;
         uint32_t tri = t < medio ? t : LED_RESPIRAR_MS - t;      /* 0..medio..0 */

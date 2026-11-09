@@ -4,11 +4,14 @@
  *   Verde fijo                    conectado a la mesh
  *   Amarillo parpadeando          intentando conectar (arranque, o sin conexión hace menos de LED_REINTENTO_MS)
  *   Rojo fijo                     sin conexión desde hace más de LED_REINTENTO_MS
- *   Azul "respirando"             calentando sensores
+ *   Azul "respirando"             conectado a la mesh y calentando sensores (sin conexión se sigue viendo el
+ *                                 intento: amarillo parpadeando o rojo)
  *   Magenta parpadeo rápido       alarma de gas o CO2 (tiene prioridad sobre todo lo demás)
  *   Cian, dos destellos cortos    un sensor falla: se intercala con el color de la conexión
  *
- * Prioridad: alarma > calentando > falla de sensor > estado de la conexión. Los estados que no
+ * Prioridad: alarma > calentando (solo si hay conexión) > falla de sensor > estado de la conexión.
+ * El calentamiento no tapa un problema de conexión: al instalar el nodo lo primero que importa es
+ * ver si engancha a la mesh; el azul aparece recién cuando ya está conectado. Los estados que no
  * corresponden se dejan en false en la entrada.
  * Los brillos (0..255) son los de abajo: ajustarlos a mano según cómo se vea el módulo.
  */
@@ -44,7 +47,7 @@ typedef struct {
 typedef struct {
     bool conectada;               /* nodo_mesh_conectada() */
     uint64_t sin_conexion_ms;     /* desde cuándo no está conectada (desde el arranque si nunca lo estuvo) */
-    bool calentando;              /* opcional: solo si se quiere mostrar el calentamiento */
+    bool calentando;              /* opcional: solo si se quiere mostrar el calentamiento (se ve con conexión) */
     bool alarma;                  /* opcional: solo si se quiere mostrar la alarma */
     bool sensor_falla;            /* algún sensor no da una medición válida (ya terminado el calentamiento) */
 } led_entrada_t;

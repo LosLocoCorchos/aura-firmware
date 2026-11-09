@@ -42,6 +42,7 @@ int main(void)
     /* Calentando: azul que respira, nunca apagado del todo ni fuera de rango */
     e = (led_entrada_t){0};
     e.calentando = true;
+    e.conectada = true;
     VERIFICAR(igual(led_calcular(&e, 0), 0, 0, LED_AZUL_MIN));
     VERIFICAR(igual(led_calcular(&e, LED_RESPIRAR_MS / 2), 0, 0, LED_AZUL_MAX));
     VERIFICAR(igual(led_calcular(&e, LED_RESPIRAR_MS), 0, 0, LED_AZUL_MIN));
@@ -49,9 +50,15 @@ int main(void)
         led_rgb_t c = led_calcular(&e, t);
         VERIFICAR(c.r == 0 && c.g == 0 && c.b >= LED_AZUL_MIN && c.b <= LED_AZUL_MAX);
     }
-    /* Calentando tiene prioridad sobre el estado de conexión */
-    e.conectada = true;
+    /* Calentando tapa el verde de "conectada" (es el aviso de que todavía no mide)... */
     VERIFICAR(led_calcular(&e, 500).g == 0);
+    /* ...pero NO tapa un problema de conexión: sin conexión se sigue viendo el intento */
+    e.conectada = false;
+    e.sin_conexion_ms = 0;
+    VERIFICAR(igual(led_calcular(&e, 0), LED_AMARILLO_R, LED_AMARILLO_G, 0));
+    VERIFICAR(igual(led_calcular(&e, 500), 0, 0, 0));
+    e.sin_conexion_ms = LED_REINTENTO_MS;
+    VERIFICAR(igual(led_calcular(&e, 0), LED_ROJO_R, 0, 0));
 
     /* Falla de sensor: dos destellos cian cada 2 s, el resto del tiempo se ve la conexión */
     e = (led_entrada_t){0};
@@ -68,8 +75,9 @@ int main(void)
     e.conectada = false;                        /* sin conexión: entre destellos sigue el rojo */
     e.sin_conexion_ms = LED_REINTENTO_MS;
     VERIFICAR(igual(led_calcular(&e, 1000), LED_ROJO_R, 0, 0));
-    /* Calentando y alarma pasan por encima de la falla */
+    /* Calentando (con conexión) y alarma pasan por encima de la falla */
     e.calentando = true;
+    e.conectada = true;
     VERIFICAR(led_calcular(&e, 0).b >= LED_AZUL_MIN && led_calcular(&e, 0).g == 0);
     e.calentando = false;
     e.alarma = true;

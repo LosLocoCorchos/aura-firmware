@@ -19,6 +19,3 @@ bool calentamiento_activo(uint64_t desde_ms, uint64_t ahora_ms, uint32_t duracio
 
 /* Segundos que faltan, redondeando hacia arriba (0 cuando terminó). */
 uint32_t calentamiento_restante_s(uint64_t desde_ms, uint64_t ahora_ms, uint32_t duracion_s);
-
-/* Avance de 0 a 100 %. */
-uint32_t calentamiento_porcentaje(uint64_t desde_ms, uint64_t ahora_ms, uint32_t duracion_s);
