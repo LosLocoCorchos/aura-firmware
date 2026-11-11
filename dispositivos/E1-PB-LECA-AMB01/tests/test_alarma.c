@@ -187,6 +187,20 @@ int main(void)
         leer(true, H_BAJO, false, 0);
     }
     VERIFICAR(a.co2.estado == CAUSA_ACTIVA);
+    /* Vence también con el valor en la banda de histéresis (entre el normal y el umbral): la causa
+       todavía no se normalizó, así que vuelve a sonar */
+    reiniciar();
+    sostener(H_BAJO, C_ALTO, MIN_MS);
+    VERIFICAR(alarma_silenciar(&a, t));
+    t_silencio = t;
+    while (t < t_silencio + ALARMA_SILENCIO_MAX_MS - PASO_MS) {
+        leer(true, H_BAJO, true, 1450);                            /* entre 1400 y 1500 */
+        VERIFICAR(a.co2.estado == CAUSA_SILENCIADA);
+    }
+    while (t <= t_silencio + ALARMA_SILENCIO_MAX_MS) {
+        leer(true, H_BAJO, true, 1450);
+    }
+    VERIFICAR(a.co2.estado == CAUSA_ACTIVA && alarma_buzzer(&a, 0));
     /* Si se normaliza antes de vencer, el silencio se va con la causa */
     reiniciar();
     sostener(H_BAJO, C_ALTO, MIN_MS);

@@ -11,7 +11,9 @@
  *
  *   NORMAL     -> ACTIVA      lecturas válidas sobre el umbral durante ALARMA_FILTRO_MS
  *   ACTIVA     -> SILENCIADA  comando "silence" con la causa activa
- *   SILENCIADA -> ACTIVA      pasaron ALARMA_SILENCIO_MAX_MS y la causa sigue alta
+ *   SILENCIADA -> ACTIVA      pasaron ALARMA_SILENCIO_MAX_MS y la causa todavía no se normalizó: vuelve a
+ *                             sonar aunque el valor esté entre el normal y el umbral (p. ej. 1450 ppm de CO2),
+ *                             o aunque la sonda no dé dato (va hacia el lado seguro)
  *   ACTIVA / SILENCIADA -> NORMAL   lecturas válidas bajo el valor "normal" durante ALARMA_FILTRO_MS
  *
  * El minuto en las dos direcciones evita que suene con cada punto de soldadura y que se apague

@@ -155,8 +155,11 @@ Reglas:
 - **El ADC saturado cuenta como lectura válida y alta** ("al menos" 4083 mV): no corta el aviso al saturar ni al
   salir de la saturación.
 - **El silencio es por causa y vence.** Dura hasta que esa causa se normaliza, o hasta que pasan 30 minutos
-  (`ALARMA_SILENCIO_MAX_MS`): si para entonces sigue alta, vuelve a sonar. Callar el CO2 no calla el humo, y una
-  causa nueva suena aunque otra esté silenciada.
+  (`ALARMA_SILENCIO_MAX_MS`). Si para entonces la causa **todavía no se normalizó**, vuelve a sonar: también cuando
+  el valor está entre el normal y el umbral (p. ej. 1450 ppm de CO2), porque normalizarse pide bajar del valor
+  normal. Y también cuando la sonda **dejó de dar dato** durante el silencio: a los 30 minutos suena sin una lectura
+  que lo confirme, porque no hay nada que diga que pasó (va hacia el lado seguro). Callar el CO2 no calla el humo,
+  y una causa nueva suena aunque otra esté silenciada.
 - **Calentamiento por sensor.** El aviso de CO2 funciona desde el arranque (el SCD40 da lecturas a los pocos
   segundos); el de humo empieza cuando termina el calentamiento del MQ2.
 - **Reinicio.** Tras un corte de luz todo arranca en normal; si la causa sigue, el aviso se prende al minuto.
@@ -175,7 +178,7 @@ NVS.
 Comando propio: `{"command":"silence"}` pasa a "silenciada" las causas **activas en ese momento**, cada una hasta
 que se normalice o pasen 30 minutos. **Sin causa activa se rechaza** (`rechazado`, motivo `sin_alarma`): no se
 guarda "para después", así un `silence` justo antes de que se prenda el aviso no deja mudo el buzzer. Se acepta
-desde AURA y desde el botón del laboratorio.
+desde AURA y desde el botón del concentrador.
 
 ## Compilar y probar
 

@@ -29,7 +29,9 @@ static void evaluar(causa_t *c, uint64_t ahora_ms, bool ok, uint32_t valor, bool
     }
     /* Sin lectura válida no se toca nada, salvo el reloj del silencio, que corre igual */
     if (c->estado == CAUSA_SILENCIADA && ahora_ms - c->silenciada_desde_ms >= ALARMA_SILENCIO_MAX_MS) {
-        c->estado = CAUSA_ACTIVA;      /* venció: si sigue alta, vuelve a sonar */
+        /* Venció: vuelve a sonar mientras la causa no se haya normalizado (también en la banda de
+           histéresis y también sin lectura válida: no hay nada que confirme que pasó) */
+        c->estado = CAUSA_ACTIVA;
     }
 }
 
