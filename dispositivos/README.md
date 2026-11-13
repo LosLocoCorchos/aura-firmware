@@ -78,7 +78,7 @@ mismo número en todos: va arriba del último piso.
 | Código | Recinto | Edificio y piso |
 |---|---|---|
 | `LECA` | LabECA | E1, planta baja |
-| `TERR` | Terraza (al aire libre) | E1, azotea |
+| `TERR` | Terraza (al aire libre) | E1 y E2, azotea |
 | `RECT` | Rectorado | E2, segundo piso |
 | `VICE` | Vicerrectorado | E2, segundo piso |
 | `DEC1` | Decanato 1 | E2, segundo piso |
@@ -125,6 +125,7 @@ que monitorea, o lo que acciona. Una placa que mide varias magnitudes del ambien
 | [`E1-PB-LECA-HFR01`](E1-PB-LECA-HFR01/) | Heladera-freezer del LabECA | grupo de IC IV 2026 | en desarrollo |
 | [`E1-PB-LECA-CDC01`](E1-PB-LECA-CDC01/) | CO2 del LabECA (mesh ESP-WIFI-MESH) | grupo de IC IV 2026 | en desarrollo |
 | [`E1-PB-LECA-TAB01`](E1-PB-LECA-TAB01/) | Medidor de energía del tablero del LabECA | grupo de IC III 2026 | en desarrollo |
+| [`E2-AZ-TERR-TAN01`](E2-AZ-TERR-TAN01/) | Nivel de tres tanques de agua de la terraza del Edificio 2 (LoRaWAN) | grupo de IC IV 2026 | en desarrollo |
 | [`E2-P2-RECT-PUE01`](E2-P2-RECT-PUE01/) | Puerta con llavero de proximidad: Rectorado (modelo [`PUE-RFID`](_modelos/PUE-RFID/)) | losHijosDelStackOverFlow (IC IV 2026) | en desarrollo |
 | [`E2-P2-VICE-PUE01`](E2-P2-VICE-PUE01/) | Puerta con llavero de proximidad: Vicerrectorado (modelo [`PUE-RFID`](_modelos/PUE-RFID/)) | losHijosDelStackOverFlow (IC IV 2026) | en desarrollo |
 | [`E2-P2-DEC1-PUE01`](E2-P2-DEC1-PUE01/) | Puerta con llavero de proximidad: Decanato 1 (modelo [`PUE-RFID`](_modelos/PUE-RFID/)) | losHijosDelStackOverFlow (IC IV 2026) | en desarrollo |
