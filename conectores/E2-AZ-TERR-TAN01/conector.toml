@@ -1,0 +1,60 @@
+# Manifiesto del conector de E2-AZ-TERR-TAN01 (nivel de 3 tanques de agua, terraza del Edificio 2).
+# Ver CONTRIBUTING.md, "Tu conector".
+nombre  = "E2-AZ-TERR-TAN01"            # igual a la carpeta
+version = "0.2.0"
+sdk     = ">=1.2,<2"
+autores = ["forzanijuan22", "AlejoRacca", "Agucesano"]   # usuarios de GitHub del grupo
+clase   = "conector:ConectorTanques"
+
+# Los campos se muestran en este orden. rol: principal (tarjeta del Dashboard y gráfico),
+# auxiliar (en la ficha, aparte) u oculto. Los nombres tienen que coincidir con los que devuelve
+# el codec (dispositivos/E2-AZ-TERR-TAN01/codec.js).
+
+# Nivel de agua de cada tanque, en %, con un decimal. Lo calcula el nodo con la altura y el lleno
+# del tanque (de fábrica, los del Mayper de 5000 L; se cambian por set_config desde AURA). Es lo
+# que importa.
+[campos.nivel_tanque1_pct]
+unidad   = "%"
+min      = 0
+max      = 100
+etiqueta = "Nivel tanque 1"
+rol      = "principal"
+
+[campos.nivel_tanque2_pct]
+unidad   = "%"
+min      = 0
+max      = 100
+etiqueta = "Nivel tanque 2"
+rol      = "principal"
+
+[campos.nivel_tanque3_pct]
+unidad   = "%"
+min      = 0
+max      = 100
+etiqueta = "Nivel tanque 3"
+rol      = "principal"
+
+# Distancia del sensor ultrasónico al agua, en cm con un decimal: la medición cruda, que llega
+# siempre. Más agua = menos distancia. El rango es el que valida el firmware
+# (250 a 6000 mm). 25 quiere decir "25 cm o menos": el agua en la zona ciega del sensor, tanque
+# lleno.
+[campos.distancia_tanque1_cm]
+unidad   = "cm"
+min      = 25
+max      = 600
+etiqueta = "Distancia al agua, tanque 1"
+rol      = "auxiliar"
+
+[campos.distancia_tanque2_cm]
+unidad   = "cm"
+min      = 25
+max      = 600
+etiqueta = "Distancia al agua, tanque 2"
+rol      = "auxiliar"
+
+[campos.distancia_tanque3_cm]
+unidad   = "cm"
+min      = 25
+max      = 600
+etiqueta = "Distancia al agua, tanque 3"
+rol      = "auxiliar"

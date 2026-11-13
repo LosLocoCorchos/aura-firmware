@@ -1,0 +1,19 @@
+// Copiar este archivo como config_local.h (en la misma carpeta) y completar.
+// config_local.h esta en el .gitignore: NUNCA se commitea. Este repo es publico.
+//
+// Las credenciales OTAA de la placa las da la catedra (ver ChirpStack).
+
+#pragma once
+
+// JoinEUI (8 bytes). En LoRaWAN 1.0.x suele ir en ceros.
+static const uint64_t JOIN_EUI = 0x0000000000000000;
+
+// DevEUI (8 bytes): es tambien el hw_id de la placa en AURA, "eui-" + estos 8 bytes en minusculas.
+static const uint64_t DEV_EUI  = 0x0000000000000000;
+
+// "Application key" de ChirpStack (16 bytes). En LoRaWAN 1.0.x no hay NwkKey:
+// el sketch pasa nullptr en ese argumento de beginOTAA().
+static const uint8_t APP_KEY[] = {
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
