@@ -125,3 +125,12 @@ que monitorea, o lo que acciona. Una placa que mide varias magnitudes del ambien
 | [`E1-PB-LECA-HFR01`](E1-PB-LECA-HFR01/) | Heladera-freezer del LabECA | grupo de IC IV 2026 | en desarrollo |
 | [`E1-PB-LECA-CDC01`](E1-PB-LECA-CDC01/) | CO2 del LabECA (mesh ESP-WIFI-MESH) | grupo de IC IV 2026 | en desarrollo |
 | [`E1-PB-LECA-TAB01`](E1-PB-LECA-TAB01/) | Medidor de energía del tablero del LabECA | grupo de IC III 2026 | en desarrollo |
+| [`E2-P2-RECT-PUE01`](E2-P2-RECT-PUE01/) | Puerta con llavero de proximidad: Rectorado (modelo [`PUE-RFID`](_modelos/PUE-RFID/)) | losHijosDelStackOverFlow (IC IV 2026) | en desarrollo |
+| [`E2-P2-VICE-PUE01`](E2-P2-VICE-PUE01/) | Puerta con llavero de proximidad: Vicerrectorado (modelo [`PUE-RFID`](_modelos/PUE-RFID/)) | losHijosDelStackOverFlow (IC IV 2026) | en desarrollo |
+| [`E2-P2-DEC1-PUE01`](E2-P2-DEC1-PUE01/) | Puerta con llavero de proximidad: Decanato 1 (modelo [`PUE-RFID`](_modelos/PUE-RFID/)) | losHijosDelStackOverFlow (IC IV 2026) | en desarrollo |
+| [`E2-P2-DEC2-PUE01`](E2-P2-DEC2-PUE01/) | Puerta con llavero de proximidad: Decanato 2 (modelo [`PUE-RFID`](_modelos/PUE-RFID/)) | losHijosDelStackOverFlow (IC IV 2026) | en desarrollo |
+| [`E2-P2-CSUP-PUE01`](E2-P2-CSUP-PUE01/) | Puerta con llavero de proximidad: Consejo Superior (modelo [`PUE-RFID`](_modelos/PUE-RFID/)) | losHijosDelStackOverFlow (IC IV 2026) | en desarrollo |
+| [`E2-P2-ACA1-PUE01`](E2-P2-ACA1-PUE01/) | Puerta con llavero de proximidad: Secretaría Académica, oficina 1 (modelo [`PUE-RFID`](_modelos/PUE-RFID/)) | losHijosDelStackOverFlow (IC IV 2026) | en desarrollo |
+| [`E2-P2-ACA2-PUE01`](E2-P2-ACA2-PUE01/) | Puerta con llavero de proximidad: Secretaría Académica, oficina 2 (modelo [`PUE-RFID`](_modelos/PUE-RFID/)) | losHijosDelStackOverFlow (IC IV 2026) | en desarrollo |
+| [`E2-P2-ACA3-PUE01`](E2-P2-ACA3-PUE01/) | Puerta con llavero de proximidad: Secretaría Académica, oficina 3 (modelo [`PUE-RFID`](_modelos/PUE-RFID/)) | losHijosDelStackOverFlow (IC IV 2026) | en desarrollo |
+| [`E2-P2-SINV-PUE01`](E2-P2-SINV-PUE01/) | Puerta con llavero de proximidad: Secretaría de Investigación y Transferencia Tecnológica (modelo [`PUE-RFID`](_modelos/PUE-RFID/)) | losHijosDelStackOverFlow (IC IV 2026) | en desarrollo |

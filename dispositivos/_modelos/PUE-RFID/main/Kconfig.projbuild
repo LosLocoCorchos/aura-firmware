@@ -1,0 +1,27 @@
+menu "Puerta con llavero (PUE-RFID)"
+    config PUERTA_RELE_ACTIVO_ALTO
+        bool "El modulo de rele se activa con el pin en ALTO"
+        default n
+        help
+            Apagada: modulo de nivel bajo (se activa con el pin en BAJO), el mas comun. Encendida:
+            modulo de nivel alto, o de los que traen un jumper H/L puesto en H. Verificar con la
+            placa enchufada y sin hacer nada: el LED del rele tiene que estar APAGADO. Si esta
+            prendido, esta opcion esta mal elegida y la cerradura queda energizada en reposo.
+
+    config PUERTA_ABRIR_REMOTO
+        bool "Aceptar la orden remota 'abrir' desde AURA"
+        default n
+        help
+            Apagada por defecto (ADR-009, decision 8). Mientras la mesh no tenga la etapa 2 de
+            seguridad, un comando falso que pase como si viniera de la raiz podria abrir cualquier
+            puerta, y una orden encolada en el broker se podria ejecutar horas despues. Habilitarla
+            exige publicar una imagen nueva, que a su vez exige la firma de la catedra (ADR-008).
+
+    config PUERTA_CARGA_POR_CONSOLA
+        bool "Cargar llaveros por la consola USB (SOLO PARA BANCO)"
+        default n
+        help
+            Agrega comandos por el puerto serie (agregar/quitar/listar) para probar sin gateway.
+            No hay autenticacion: quien tenga el cable puede cargar cualquier llavero. No se
+            habilita en una puerta instalada.
+endmenu
