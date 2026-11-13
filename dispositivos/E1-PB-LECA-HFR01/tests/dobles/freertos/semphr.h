@@ -1,0 +1,6 @@
+#pragma once
+#include <stdint.h>
+typedef void *SemaphoreHandle_t;
+static inline SemaphoreHandle_t xSemaphoreCreateMutex(void) { return (void *)1; }
+static inline int xSemaphoreTake(SemaphoreHandle_t h, uint32_t ticks) { (void)h; (void)ticks; return 1; }
+static inline int xSemaphoreGive(SemaphoreHandle_t h) { (void)h; return 1; }

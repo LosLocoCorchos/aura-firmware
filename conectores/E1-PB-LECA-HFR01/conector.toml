@@ -1,0 +1,19 @@
+nombre = "E1-PB-LECA-HFR01"
+version = "1.0.0"
+sdk = ">=1.2,<2"
+autores = ["VainstubTomas", "Bernidb", "Kinggrass265", "JuanCruz46"]
+clase = "conector:ConectorHeladeraFreezer"
+
+[campos.temp_heladera_c]
+unidad = "°C"
+min = -55
+max = 125
+etiqueta = "Temperatura heladera"
+rol = "principal"
+
+[campos.temp_freezer_c]
+unidad = "°C"
+min = -55
+max = 125
+etiqueta = "Temperatura freezer"
+rol = "principal"

@@ -1,0 +1,5 @@
+# ESP32-C3 SuperMini - lector de banco (no es parte de la mesh ni se instala en una puerta)
+CONFIG_IDF_TARGET="esp32c3"
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+CONFIG_ESP_TASK_WDT_PANIC=y

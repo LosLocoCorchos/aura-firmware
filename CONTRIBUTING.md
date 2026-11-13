@@ -40,6 +40,9 @@ apunta al modelo. Ver [*Varios dispositivos con el mismo firmware*](dispositivos
 
 ## 2. Tu carpeta
 
+0. **Primer PR, una sola vez por persona:** tu archivo en
+   [`docs/contribuidores/`](docs/contribuidores/). Hasta que tengas un commit mergeado, GitHub
+   no corre el CI de tus PRs sin que la cátedra lo apruebe a mano.
 1. Hacé un **fork** de este repositorio y trabajá en una rama.
 2. **Mesh (interior):** copiá [`Mesh_Red_Completa/Mesh3_Hoja/`](Mesh_Red_Completa/Mesh3_Hoja/) a
    `dispositivos/<CÓDIGO>/` (ver abajo). **LoRaWAN (exterior):** copiá

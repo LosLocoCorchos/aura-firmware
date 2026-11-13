@@ -1,0 +1,26 @@
+# ESP32-C3 SuperMini (4 MB) - Puerta con llavero de proximidad
+CONFIG_IDF_TARGET="esp32c3"
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+# Tabla propia: dos lugares OTA + particion "cola" (respaldo de eventos sin confirmar tras un corte)
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+# Una version nueva que no logra hablar con la raiz vuelve sola a la anterior
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+# Imagenes firmadas: la placa solo instala por OTA una imagen firmada con la clave de la catedra
+# (RSA-3072, esquema de Secure Boot V2, sin quemar eFuses). La compilacion NO firma: se firma
+# aparte (GUIA_NODOS_HOJA.md, "Imagenes firmadas"). La clave nunca se sube al repo.
+CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y
+CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME=y
+CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT=y
+# CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES is not set
+
+# Watchdog de tareas: si la logica de la puerta, el sonido o el lector se cuelgan, la placa se
+# reinicia (y el rele queda suelto = cerradura trabada). Sin PANIC solo imprimiria un aviso.
+CONFIG_ESP_TASK_WDT_EN=y
+CONFIG_ESP_TASK_WDT_INIT=y
+CONFIG_ESP_TASK_WDT_PANIC=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=5
+# El watchdog de interrupciones tambien reinicia
+CONFIG_ESP_INT_WDT=y
+# Consola por el USB nativo de la placa: GPIO20 y GPIO21 son del RC522, no de una UART
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y

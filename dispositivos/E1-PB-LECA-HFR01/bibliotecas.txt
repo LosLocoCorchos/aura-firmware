@@ -1,0 +1,7 @@
+# Proyecto ESP-IDF 6.1: no utiliza bibliotecas de Arduino.
+# Component Manager resuelve las versiones de main/idf_component.yml:
+# espressif/cjson@1.7.19~2
+# espressif/ds18b20@0.4.0
+# espressif/onewire_bus@1.1.2
+# nodo_mesh y aura_mesh: ../../Mesh_Red_Completa/componentes (version del repositorio).
+# I2C, GPIO, RMT, NVS y FreeRTOS: incluidos en ESP-IDF 6.1.

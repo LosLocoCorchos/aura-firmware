@@ -1,0 +1,17 @@
+# Manifiesto del conector. Ver CONTRIBUTING.md, "Tu conector".
+nombre  = "E1-PB-LECA-CDC01"            # igual a la carpeta
+version = "0.1.0"
+sdk     = ">=1.2,<2"
+autores = ["AgosBracaccini", "JulietaCordoba", "luisina-milanese"]
+clase   = "conector:ConectorCO2"
+
+# Los campos se muestran en este orden. rol: principal (tarjeta del Dashboard y gráfico),
+# auxiliar (en la ficha, aparte) u oculto.
+
+# La placa manda : CO2 del MH-Z19C (rango del sensor: 400 a 5000 ppm).
+[campos.co2_ppm]
+unidad   = "ppm"
+min      = 400
+max      = 5000
+etiqueta = "CO2"
+rol      = "principal"

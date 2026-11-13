@@ -19,6 +19,8 @@
 /herramientas/        @mwanzenried
 /ejemplos/            @mwanzenried
 /dispositivos/README.md @mwanzenried
+/dispositivos/E1-PB-LECA-HFR01/   @VainstubTomas @Bernidb @Kinggrass265 @JuanCruz46 @mwanzenried
+/conectores/E1-PB-LECA-HFR01/   @VainstubTomas @Bernidb @Kinggrass265 @JuanCruz46 @mwanzenried
 /dispositivos/E1-PB-LECA-TAB01/   @francobroggi @tomasvidela11 @santicianflone
 /conectores/E1-PB-LECA-TAB01/     @francobroggi @tomasvidela11 @santicianflone
 
@@ -26,3 +28,18 @@
 /conectores/E1-AZ-TERR-TAN01/     @FerChaparro27 @romerof7
 /dispositivos/E1-PB-LECA-AMB01/   @LosLocoCorchos
 /conectores/E1-PB-LECA-AMB01/     @LosLocoCorchos
+
+/dispositivos/E1-PB-LECA-CDC01/   @AgosBracaccini @JulietaCordoba @luisina-milanese
+/conectores/E1-PB-LECA-CDC01/     @AgosBracaccini @JulietaCordoba @luisina-milanese
+
+# Puertas del Edificio 2, piso 2 (modelo PUE-RFID y sus nueve instalaciones)
+/dispositivos/_modelos/PUE-RFID/   @romerof7
+/dispositivos/E2-P2-RECT-PUE01/   @romerof7
+/dispositivos/E2-P2-VICE-PUE01/   @romerof7
+/dispositivos/E2-P2-DEC1-PUE01/   @romerof7
+/dispositivos/E2-P2-DEC2-PUE01/   @romerof7
+/dispositivos/E2-P2-CSUP-PUE01/   @romerof7
+/dispositivos/E2-P2-ACA1-PUE01/   @romerof7
+/dispositivos/E2-P2-ACA2-PUE01/   @romerof7
+/dispositivos/E2-P2-ACA3-PUE01/   @romerof7
+/dispositivos/E2-P2-SINV-PUE01/   @romerof7
